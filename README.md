@@ -1,38 +1,26 @@
-# sv
+# JOPLIN
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+That's right, it's Ragtime!
 
-## Creating a project
+——
 
-If you're seeing this, you've probably already done this step. Congrats!
+### What is this thing?
 
-```bash
-# create a new project in the current directory
-npx sv create
+`joplin` lets you upload a large number of documents and talk to them using a large-language model, but unlike other systems, this one should work entirely on your laptop computer. This means it's completely private, and your private documents, notes, and data can all stay, well, private. This kind of system is called retrieval-augmented generation, or RAG (hence the name Joplin).
 
-# create a new project in my-app
-npx sv create my-app
-```
+### Core features
 
-## Developing
+A local web front-end (powered by `SvelteKit`) where you can...
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+1. "Upload" a document (save it to a folder in the Joplin instance), name it, and associate metadata with it in a `SQLite` database managed by the API (see below).
+2. Query into your documents using the back-end API (see below).
 
-```bash
-npm run dev
+A local back-end API (powered by `FastAPI`) that will...
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+1. Clean, chunk, and embed each PDF or Markdown document using Huggingface's `sentence_transformers` library, and save each chunk to a `SQLite` database.
+2. Take a plain-text query from the user, use `sentence_transformers` to embed it, get the relevent chunks using an ANN query into the `SQLite` database, and then pass those to `Llama v3.?` to get generative text on top.
 
-## Building
+### Future features
 
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+1. The ability to create Markdown notes in the front-end and save them into the database as if they were new documents.
+2. The ability to select which source documents or type of source documents you want to include in your RAG task.
