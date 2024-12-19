@@ -1,13 +1,12 @@
 <script>
   import Documents from "$lib/components/Documents.svelte";
+  import Header from "$lib/components/Header.svelte";
   import Query from "$lib/components/Query.svelte";
   import Upload from "$lib/components/Upload.svelte";
 </script>
 
 <div class="Page">
-  <header>
-    <h1><span class="title">Joplin.</span> It's RAG time for your laptop.</h1>
-  </header>
+  <Header />
   <div class="page-guts">
     <div class="space left">
       <div>
@@ -26,30 +25,24 @@
 </div>
 
 <style>
-  header {
-    background-color: var(--color-dark);
-    padding: calc(var(--unit) * 0.5) calc(var(--unit) * 2);
-  }
-  header h1 {
-    color: var(--color-light);
-    font-family: var(--font-sans);
-    font-size: var(--unit);
-    font-weight: 100;
-  }
-  header h1 .title {
-    color: var(--color-light);
-    font-weight: 800;
-  }
   .page-guts {
     padding: calc(var(--unit) * 2);
   }
   .space.left {
+    border: 1px solid var(--color-dark);
     float: left;
+    height: calc(100vh - (var(--unit) * 4));
     margin-right: var(--unit);
+    margin-top: var(--unit);
+    overflow: scroll;
     width: 400px;
   }
   .space.center {
+    border: 1px solid var(--color-dark);
     float: left;
+    height: calc(100vh - (var(--unit) * 4));
+    margin-top: var(--unit);
+    overflow: scroll;
     width: calc(800px);
   }
   .space div {

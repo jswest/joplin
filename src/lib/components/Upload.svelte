@@ -1,19 +1,26 @@
 <script>
+  import Button from "$lib/components/Button.svelte";
+  import { FASTAPI_PORT } from "$lib/config";
+  import { documentReloadCounter } from "$lib/stores.js";
+
   let files;
-  let uploading = false;
+  let working = false;
   let error = null;
 
   async function handleSubmit() {
-    uploading = true;
+    working = true;
     error = null;
     try {
       const formData = new FormData();
       formData.append("file", files[0]);
 
-      const response = await fetch("http://localhost:8000/documents/", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `http://localhost:${FASTAPI_PORT}/documents/`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Upload failed");
@@ -25,7 +32,8 @@
     } catch (e) {
       error = e.message;
     } finally {
-      uploading = false;
+      working = false;
+      $documentReloadCounter += 1;
     }
   }
 
@@ -49,7 +57,7 @@
   }
 </script>
 
-<form class="Upload" on:submit|preventDefault={handleSubmit}>
+<div class="Upload">
   <h1 class="form-title">Add a document.</h1>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -72,21 +80,19 @@
       type="file"
       bind:files
       accept=".pdf,.txt,.md"
-      class="w-full"
-      disabled={uploading}
+      disabled={working}
     />
   </div>
   {#if error}
     <div class="error"><p>{error}</p></div>
   {/if}
-  <button disabled={!files || uploading} type="submit"
-    >Add this document.</button
-  >
-</form>
+  <div class="button-wrapper">
+    <Button handler={handleSubmit} text="Add this document." />
+  </div>
+</div>
 
 <style>
   .Upload {
-    border: 1px solid var(--color-dark);
     box-sizing: border-box;
     max-width: 400px;
     padding: var(--unit);
@@ -118,7 +124,7 @@
   input[type="file"] {
     display: none;
   }
-  button {
+  .button-wrapper {
     margin-top: var(--unit);
     width: 100%;
   }

@@ -4,7 +4,9 @@
 </script>
 
 <div class="Document">
-  <p class="document-id">DOCUMENT-{id}</p>
+  <p class="document-id">
+    <a href="/documents/{id}/">DOCUMENT-{id}</a>
+  </p>
   {#if meta.hed}
     <h1>{meta.hed.slice(0, 140)}</h1>
   {/if}

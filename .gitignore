@@ -5,6 +5,7 @@
 __pycache__
 .env
 build
+chroma.log
 db/chroma
 documents/*.md
 documents/*.pdf

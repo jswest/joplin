@@ -1,6 +1,7 @@
 from datetime import datetime
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from loguru import logger
 from ollama import Client
 from pathlib import Path
@@ -123,7 +124,7 @@ async def query_documents(request: QueryRequest):
         
         # Create the prompt
         prompt = f"""
-        Using only the following context, answer the query."
+        Using only the following context, answer the query. Please be verbose."
 
         Context:
         {context}
@@ -162,6 +163,27 @@ async def query_documents(request: QueryRequest):
         }
     except Exception as e:
         logger.error(e)
+
+@app.get("/documents/{document_id}/pdf")
+async def get_pdf(document_id: str):
+    client = get_db()
+    document_collection = client.get_or_create_collection("documents")
+    
+    result = document_collection.get(
+        ids=[document_id],
+        include=["metadatas"]
+    )
+    
+    if not result['metadatas']:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    filename = result['metadatas'][0]['file_name']
+
+    return FileResponse(
+        f"./documents/{filename}",
+        media_type='application/pdf',
+        filename=filename
+    )
 
 if __name__ == "__main__":
     import uvicorn

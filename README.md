@@ -40,12 +40,18 @@ pip install -r requirements.txt
 npm install
 
 ollama pull mistral
+
+python db/connection.py
 ```
 
 ### Running it
 
 ```bash
-uvicorn api.main:app --reload
+uvicorn api.main:app --reload --port 8001
+```
+
+```bash
+chroma run --path ./db/chroma
 ```
 
 ```bash

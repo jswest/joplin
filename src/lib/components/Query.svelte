@@ -1,6 +1,7 @@
 <script>
   import { marked } from "marked";
 
+  import Button from "$lib/components/Button.svelte";
   import Document from "$lib/components/Document.svelte";
 
   let answer = $state("");
@@ -16,7 +17,7 @@
     });
     const data = await res.json();
     console.log(data);
-    answer = marked.parse(data.answer);
+    answer = marked.parse(data.answer.split('\n').map((graf) => graf.trim()).join('\n'));
     documents = data.documents;
     working = false;
   }
@@ -24,17 +25,20 @@
 
 <div class="Query">
   <h1 class="module-title">Talk to your documents.</h1>
+  <h2 class="module-subhed">Ask a question.</h2>
   <div class="field">
     <input bind:value={query} type="text" />
   </div>
-  {#if !working}
-    <button onclick={handleClick}>Ask.</button>
-  {/if}
+  <div class="button-wrapper">
+    <Button handler={handleClick} text="Ask." />
+  </div>
   {#if answer}
     <div class="answer">
+      <h2 class="module-subhed">The AI answer.</h2>
       <div class="answer-guts">
         {@html answer}
       </div>
+      <h2 class="module-subhed">The AI sources.</h2>
       <ul class="answer-sources">
         {#each documents as document}
           <li>
@@ -43,14 +47,6 @@
                 id={document.document_id}
                 meta={document.document_metadata}
               />
-              <ul class="chunks">
-                {#each document.chunk_bodies as body}
-                  <li>
-                    <p>{body}</p>
-                  </li>
-                {/each}
-              </ul>
-              <div style="clear:both;"></div>
             </div>
           </li>
         {/each}
@@ -61,7 +57,6 @@
 
 <style>
   .Query {
-    border: 1px solid var(--color-dark);
     box-sizing: border-box;
     max-width: 800px;
     padding: var(--unit);
@@ -70,11 +65,15 @@
   input {
     margin-bottom: var(--unit);
   }
-  .answer {
+  .button-wrapper {
+    margin-bottom: var(--unit);
+  }
+  .answer-guts {
     background-color: white;
+    margin-bottom: var(--unit);
     margin-top: var(--unit);
   }
-  .answer :global(p) {
+  .answer-guts :global(p) {
     font-family: var(--font-sans);
     font-size: var(--unit);
     line-height: 1.5;
@@ -83,26 +82,7 @@
   .answer ul {
     list-style: none;
   }
-  .answer ul.answer-sources {
-    margin-left: var(--unit);
-  }
-  .answer ul.answer-sources > li {
-    border-top: 1px solid var(--color-dark);
+  .answer ul.answer-sources li {
     margin-bottom: var(--unit);
-    padding-top: var(--unit);
-  }
-  .answer ul.chunks li {
-    border: 1px solid black;
-    box-sizing: border-box;
-    float: left;
-    height: 200px;
-    margin: calc(var(--unit) * 0.5);
-    overflow: scroll;
-    padding: calc(var(--unit) * 0.25);
-    width: 300px;
-  }
-  .answer ul.chunks li p {
-    font-size: calc(var(--unit) * 0.75);
-    line-height: 1;
   }
 </style>
