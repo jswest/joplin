@@ -28,7 +28,7 @@ A local back-end API (powered by `FastAPI`) that will...
 
 ### Installation
 
-Install `ollama`.
+Install `ollama` (instructions [here](https://ollama.com/download)).
 
 Run:
 
