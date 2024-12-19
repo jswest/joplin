@@ -16,7 +16,6 @@
       body: JSON.stringify({ query }),
     });
     const data = await res.json();
-    console.log(data);
     answer = marked.parse(data.answer.split('\n').map((graf) => graf.trim()).join('\n'));
     documents = data.documents;
     working = false;
