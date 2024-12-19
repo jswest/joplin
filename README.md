@@ -24,3 +24,30 @@ A local back-end API (powered by `FastAPI`) that will...
 
 1. The ability to create Markdown notes in the front-end and save them into the database as if they were new documents.
 2. The ability to select which source documents or type of source documents you want to include in your RAG task.
+
+
+### Installation
+
+Install `ollama`.
+
+Run:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+npm install
+
+ollama pull mistral
+```
+
+### Running it
+
+```bash
+uvicorn api.main:app --reload
+```
+
+```bash
+npm run dev -- --open
+```

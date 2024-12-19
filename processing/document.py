@@ -1,10 +1,9 @@
 from typing import List, Tuple
 
-from .embedding import get_embeddings
 from .pdf import extract_text_from_pdf
 from .text import chunk_text
 
-def process_document(file_path: str) -> Tuple[str, List[str], List[float]]:
+def process_document(file_path: str) -> Tuple[str, List[str]]:
     if file_path.endswith('.pdf'):
         full_text = extract_text_from_pdf(file_path)
     elif file_path.endswith('.md') or file_path.endswith('txt'):
@@ -15,6 +14,4 @@ def process_document(file_path: str) -> Tuple[str, List[str], List[float]]:
     
     chunks = chunk_text(full_text)
     
-    embeddings = get_embeddings(chunks)
-    
-    return full_text, chunks, embeddings
+    return full_text, chunks

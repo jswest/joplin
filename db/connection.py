@@ -1,35 +1,16 @@
-import sqlite3
+import chromadb
 from contextlib import contextmanager
-from typing import Generator
 
-@contextmanager
-def get_db() -> Generator[sqlite3.Connection, None, None]:
-    try:
-        connection = sqlite3.connect('./db/joplin.db')
-        connection.enable_load_extension(True)
-        connection.load_extension("vector0")
-        
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        
-        yield connection
-        connection.commit()
- 
-    except Exception as e:
-        print(e)
-        raise e
-    finally:
-        connection.close()
+def get_db():
+    return chromadb.PersistentClient(path="./db/chroma")
 
-def init_db() -> None:    
-    try:
-        with get_db() as connection:
-            with open('./db/schema.sql', 'r') as in_file:
-                sql = in_file.read()
-            connection.executescript(sql)
-    except Exception as e:
-        print(e)
-        raise e
-
-if __name__ == "__main__":
-    init_db()
+def init_db():
+    client = get_db()
+    client.get_or_create_collection(
+        name="documents",
+        metadata={"hnsw:space": "cosine"}
+    )
+    client.get_or_create_collection(
+        name="chunks",
+        metadata={"hnsw:space": "cosine"}
+    )

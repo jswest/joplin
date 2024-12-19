@@ -1,102 +1,167 @@
+from datetime import datetime
 from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
+from ollama import Client
 from pathlib import Path
 import tempfile
 import shutil
 from uuid import uuid4
 
-from .models import Query
-from processing import get_embeddings, process_document
-
-from db.connection import get_db
+from db import get_db
+from .models import QueryRequest
+from processing import process_document
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # SvelteKit dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+ollama = Client(host='http://localhost:11434')
 
 @app.post("/documents/")
 async def create_document(file: UploadFile):
     file_extension = file.filename.split('.')[-1]
     file_name = f"{str(uuid4())}.{file_extension}"
     file_path = f"./documents/{file_name}"
+    logger.info(f"Processing new document with name '{file_name}'.")
 
     with open(f"./documents/{file_name}", "wb") as out_file:
         shutil.copyfileobj(file.file, out_file)
   
     try:
-        full_text, chunks, embeddings = process_document(file_path)
+        full_text, chunks = process_document(f"./documents/{file_name}")
+        logger.info(f"Chunked and extracted the document.")
         
-        with get_db() as connection:
-            cursor = connection.execute(
-                """
-                INSERT INTO documents (body, file_name, format) 
-                VALUES (?, ?, ?)
-                RETURNING id
-                """,
-                (full_text, file_name, file_extension)
-            )
-            document_id = cursor.fetchone()['id']
+        client = get_db()
+        document_collection = client.get_or_create_collection("documents")
+        chunk_collection = client.get_or_create_collection("chunks")
 
-            for chunk, embedding in zip(chunks, embeddings):
-                connection.execute(
-                    """
-                    INSERT INTO chunks (body, embedding, document_id)
-                    VALUES (?, ?, ?)
-                    """,
-                    (chunk, embedding.tobytes(), document_id)
-                )
+        hed_prompt = f"""
+        Provide a very short title for this document. It should be no more than 100 characters in length. Only return the title text. Be concise!
+        
+        {chunks[0]}
+        """
+        hed = ollama.generate(
+            model='mistral',
+            prompt=hed_prompt,
+            stream=False
+        )
+        logger.info(f"Received new hed: '{hed['response']}'")
+
+        dek_prompt = f"""
+        Provide a very short description for this document. It should be no more than one sentence in length. Only return the description text. Be concise!
+        
+        {chunks[0]}
+        """
+        dek = ollama.generate(
+            model='mistral',
+            prompt=dek_prompt,
+            stream=False
+        )
+        logger.info(f"Received new dek: '{dek['response']}'")
+
+        # Store the document
+        document_id = str(uuid4())
+        document_collection.add(
+            documents=[full_text],
+            metadatas=[{
+                "created_at": datetime.utcnow().isoformat(),
+                "dek": dek["response"],
+                "file_name": file_name,
+                "format": file_extension,
+                "hed": hed["response"],
+                "is_note": False,
+            }],
+            ids=[document_id]
+        )
+        logger.info(f"Document saved.'")
+        
+        # Store the chunks, referencing the document
+        chunk_collection.add(
+            documents=chunks,
+            metadatas=[{
+                "document_id": document_id,
+                "chunk_index": i
+            } for i in range(len(chunks))],
+            ids=[f"{document_id}-chunk-{i}" for i in range(len(chunks))]
+        )
+        logger.info(f"Chunks saved.")
         
         return {"id": document_id, "chunks_processed": len(chunks)}
     except Exception as e:
         print(e)
 
-@app.post("/query/")
-async def query_documents(query: Query):
-    query_embedding = get_embeddings([query.text])[0]
-    
-    with get_db() as connection:
-        results = connection.execute(
-            """
-            SELECT
-                c.id,
-                c.created_at,
-                c.body,
-                d.created_at AS document_created_at,
-                d.dek AS document_dek,
-                d.file_name as document_file_name,
-                d.format AS document_format,
-                d.hed AS document_hed,
-                d.id AS document_id,
-                d.is_note AS document_is_note,
-                vss_distance(chunks.embedding, ?) as similarity
-            FROM chunks AS c
-            JOIN documents AS d ON c.document_id = d.id
-            ORDER BY c.embedding <-> ?
-            LIMIT 10
-            """,
-            (
-                query_embedding.tobytes(),
-                query_embedding.tobytes(),
-            )
-        ).fetchall()
-        return [dict(row) for row in results]
+@app.get('/documents/')
+async def get_documents():
+    client = get_db()
+    collection = client.get_or_create_collection("documents")
+    results = collection.get(
+        include=["metadatas"]
+    )
+    return results
 
-@app.get("/documents/")
-async def list_documents():
-    with get_db() as conn:
-        results = conn.execute(
-            """
-            SELECT
-                id,
-                created_at,
-                body,
-                dek,
-                hed,
-                file_name,
-                format,
-                is_note
-            FROM documents
-            ORDER BY created_at DESC
-            """
-        ).fetchall()
-        return [dict(row) for row in results]
+@app.post("/query/")
+async def query_documents(request: QueryRequest):
+    query = request.query
+    try:
+        client = get_db()
+        document_collection = client.get_or_create_collection("documents")
+        chunk_collection = client.get_or_create_collection("chunks")
+        
+        results = chunk_collection.query(
+            query_texts=[query],
+            n_results=5
+        )
+        
+        context = "\n\n".join(results['documents'][0])
+        
+        # Create the prompt
+        prompt = f"""
+        Using only the following context, answer the query."
+
+        Context:
+        {context}
+
+        Query:
+        {query}
+
+        Answer:
+        """
+
+        response = ollama.generate(
+            model='mistral',
+            prompt=prompt,
+            stream=False
+        )
+
+        chunks_by_document_id = {}
+        for i, chunk_meta in enumerate(results['metadatas'][0]):
+            document_id = chunk_meta['document_id']
+            chunk_body = results['documents'][0][i]
+            if document_id not in chunks_by_document_id:
+                document_result = document_collection.get(
+                    ids=[document_id],
+                    include=["metadatas"]
+                )
+                chunks_by_document_id[document_id] = {
+                    'document_id': document_id,
+                    'document_metadata': document_result['metadatas'][0],
+                    'chunk_bodies': []
+                }
+            chunks_by_document_id[document_id]['chunk_bodies'].append(chunk_body)
+            
+        return {
+            "answer": response['response'],
+            "documents": list(chunks_by_document_id.values())
+        }
+    except Exception as e:
+        logger.error(e)
 
 if __name__ == "__main__":
     import uvicorn

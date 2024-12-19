@@ -1,0 +1,56 @@
+:root {
+  --color-dark: #1c2329;
+  --color-light: #ffeedd;
+  --color-error: #c34a4a;
+  --font-mono: "Doto Rounded";
+  --font-sans: "Roboto";
+  --font-serif: "Cormorant Garamond";
+  --unit: 18px;
+}
+
+html,
+body {
+  background-color: var(--color-light);
+}
+
+* {
+  color: var(--color-dark);
+  margin: 0;
+  padding: 0;
+}
+
+
+.form-title,
+.module-title {
+  font-family: var(--font-sans);
+  font-size: calc(var(--unit) * 1);
+  font-weight: 800;
+  margin-bottom: var(--unit);
+}
+
+button {
+  background-color: var(--color-dark);
+  border: none;
+  border-radius: 0;
+  color: var(--color-light);
+  font-family: var(--font-sans);
+  font-size: var(--unit);
+  font-weight: 800;
+  line-height: 1;
+  outline: none;
+  padding: calc(var(--unit) / 2) var(--unit);
+  text-align: left;
+}
+input {
+  border: 1px solid var(--color-dark);
+  border-radius: 0;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: var(--unit);
+  font-weight: 400;
+  line-height: 1;
+  outline: none;
+  padding: calc(var(--unit) / 2) var(--unit);
+  text-align: left;
+  width: 100%;
+}

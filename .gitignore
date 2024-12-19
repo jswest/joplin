@@ -2,8 +2,10 @@
 .svelte-kit
 .venv
 *.db
+__pycache__
 .env
 build
+db/chroma
 documents/*.md
 documents/*.pdf
 documents/*.txt

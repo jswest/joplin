@@ -15,3 +15,6 @@ class Document(BaseModel):
 class Query(BaseModel):
     text: str
     limit: int = 10
+
+class QueryRequest(BaseModel):
+    query: str
