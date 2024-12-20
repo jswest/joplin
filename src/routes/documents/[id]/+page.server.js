@@ -5,26 +5,30 @@ import { FASTAPI_PORT } from "$lib/config";
 const client = new ChromaClient();
 
 export async function load({ params }) {
-  const pdfResponse = await fetch(
-    `http://localhost:${FASTAPI_PORT}/documents/${params.id}/pdf`
-  );
-
   const documents = await client.getCollection({ name: "documents" });
   const documentResponse = await documents.get({
     ids: [params.id],
-    include: ["metadatas"],
+    include: ["documents", "metadatas"],
   });
 
-  if (!pdfResponse.ok) {
-    throw error(pdfResponse.status, "Could not load PDF");
+  const document = documentResponse.metadatas[0];
+  let data;
+  if (document.format === "pdf") {
+    const pdfResponse = await fetch(
+      `http://localhost:${FASTAPI_PORT}/documents/${params.id}/pdf`
+    );
+    if (!pdfResponse.ok) {
+      throw error(pdfResponse.status, "Could not load PDF");
+    }
+    data = await pdfResponse.arrayBuffer();
+  } else {
+    data = documentResponse.documents[0];
   }
 
-  const pdfData = await pdfResponse.arrayBuffer();
-
   return {
-    contentType: "application/pdf",
+    contentType: `application/${document.format === 'pdf' ? 'pdf' : 'text'}`,
+    data,
     documentId: params.id,
-    documentMetadata: documentResponse.metadatas[0],
-    pdfData: pdfData,
+    documentMetadata: document,
   };
 }

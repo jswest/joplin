@@ -18,6 +18,12 @@
   <p class="document-id">
     <a href="/documents/{id}/">DOCUMENT-{id}</a>
   </p>
+  <p class="created-at">
+    CREATED AT: {new Date(meta.created_at).toLocaleString('en-US')}
+  </p>
+  <p class="format">
+    <Token name={meta.format} />
+  </p>
   {#if meta.hed}
     <h1>{meta.hed.slice(0, 140).trim()}</h1>
   {/if}
@@ -44,11 +50,14 @@
     margin-bottom: var(--unit);
     padding-left: calc(var(--unit) * 0.75);
   }
-  .Document .document-id {
+  .Document .document-id,
+  .Document .created-at {
     font-family: var(--font-sans);
     font-size: calc(var(--unit) * 0.75);
-    margin-bottom: calc(var(--unit) * 0.5);
     padding: 0;
+  }
+  .Document .format {
+    margin-bottom: calc(var(--unit) * 0.5);
   }
   .Document h1 {
     font-family: var(--font-sans);

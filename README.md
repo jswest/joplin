@@ -18,7 +18,7 @@ A local web front-end (powered by `SvelteKit`) where you can...
 A local back-end API (powered by `FastAPI`) that will...
 
 1. Clean, chunk, and embed each PDF or Markdown document using Huggingface's `sentence_transformers` library, and save each chunk to a `SQLite` database.
-2. Take a plain-text query from the user, use `sentence_transformers` to embed it, get the relevent chunks using an ANN query into the `SQLite` database, and then pass those to `Llama v3.?` to get generative text on top.
+2. Take a plain-text query from the user, use `sentence_transformers` to embed it, get the relevent chunks using an ANN query into the `SQLite` database, and then pass those to `Mistral` to get generative text on top.
 
 ### Future features
 
@@ -46,14 +46,30 @@ python db/connection.py
 
 ### Running it
 
+Make sure that `ollama` is running.
+
+This will open up an Electron app:
+
 ```bash
-uvicorn api.main:app --reload --port 8001
+NODE_ENV=development npm run dev
+```
+
+To run in total development mode:
+
+```bash
+source .venv/bin/activate
+npm run chroma
 ```
 
 ```bash
-chroma run --path ./db/chroma
+source .venv/bin/activate
+npm run server
 ```
 
 ```bash
-npm run dev -- --open
+npm run vite
 ```
+
+### TODOS
+
+- Enable the ability to just query for similar notes (just semantic search).

@@ -3,20 +3,55 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"main": "main.js",
 	"scripts": {
-		"dev": "vite dev",
+		"chroma": "chroma run --path ./db/chroma",
+		"dev": "concurrently \"vite dev\" \"electron .\"",
 		"build": "vite build",
-		"preview": "vite preview"
+		"package": "npm run build && electron-builder",
+		"postinstall": "node scripts/venv.js",
+		"server": "uvicorn api.main:app --port 8001",
+		"start": "electron .",
+		"vite": "vite dev"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^3.0.0",
+		"@sveltejs/adapter-static": "^3.0.6",
 		"@sveltejs/kit": "^2.9.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"concurrently": "^9.1.0",
+		"electron": "^33.2.1",
+		"electron-builder": "^25.1.8",
 		"svelte": "^5.0.0",
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
 		"chromadb": "^1.9.4",
-		"marked": "^15.0.4"
+		"chromadb-default-embed": "^2.13.2",
+		"marked": "^15.0.4",
+		"tree-kill": "^1.2.2"
+	},
+	"build": {
+		"appId": "com.joplin.rag",
+		"files": [
+			"build/**/*",
+			"main.js",
+			"api/**/*",
+			"db/**/*",
+			".venv/**/*"
+		],
+		"directories": {
+			"buildResources": "assets",
+			"output": "dist"
+		},
+		"extraResources": [
+			{
+				"from": ".venv",
+				"to": "venv",
+				"filter": [
+					"**/*"
+				]
+			}
+		]
 	}
 }

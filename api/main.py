@@ -1,11 +1,12 @@
 from datetime import datetime
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from loguru import logger
 from ollama import Client
 from pathlib import Path
 import tempfile
+from typing import Optional
 import shutil
 from uuid import uuid4
 
@@ -99,12 +100,35 @@ async def create_document(file: UploadFile):
         print(e)
 
 @app.get('/documents/')
-async def get_documents():
+async def get_documents(semantic: Optional[str] = Query(None)):
     client = get_db()
-    collection = client.get_or_create_collection("documents")
-    results = collection.get(
-        include=["metadatas"]
-    )
+    document_collection = client.get_or_create_collection("documents")
+    chunk_collection = client.get_or_create_collection("chunks")
+    if semantic:
+        chunks_results = chunk_collection.query(
+            query_texts=[semantic],
+            n_results=20,
+        )
+        chunks_by_document_id = {}
+        for i, chunk_meta in enumerate(chunks_results['metadatas'][0]):
+            document_id = chunk_meta['document_id']
+            chunk_body = chunks_results['documents'][0][i]
+            if document_id not in chunks_by_document_id:
+                document_result = document_collection.get(
+                    ids=[document_id],
+                    include=["metadatas"]
+                )
+                chunks_by_document_id[document_id] = {
+                    'document_id': document_id,
+                    'document_metadata': document_result['metadatas'][0],
+                    'chunk_bodies': []
+                }
+            chunks_by_document_id[document_id]['chunk_bodies'].append(chunk_body)
+        results = list(chunks_by_document_id.values())
+    else:
+        results = document_collection.get(
+            include=["metadatas"]
+        )
     return results
 
 @app.post("/query/")
