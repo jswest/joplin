@@ -1,9 +1,12 @@
 from .document import process_document
 from .pdf import extract_text_from_pdf
-from .text import chunk_text
+from .text import chunk_text, hash_text, summarize_chunk, summarize_document
 
 __all__ = [
-    'process_document',
+    'chunk_text',
     'extract_text_from_pdf',
-    'chunk_text'
+    'hash_text',
+    'process_document',
+    'summarize_chunk',
+    'summarize_document'
 ]

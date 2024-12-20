@@ -47,3 +47,10 @@ input {
   text-align: left;
   width: 100%;
 }
+.transparent-button {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  outline: none;
+}

@@ -70,6 +70,17 @@ npm run server
 npm run vite
 ```
 
+
+### The Zotero connection
+
+Try:
+
+```bash
+source .venv/bin/activate
+playwright install
+python scripts/convert-zotero-to-pdf.py path/to/zotero/export path/to/output/dir
+```
+
 ### TODOS
 
 - Enable the ability to just query for similar notes (just semantic search).

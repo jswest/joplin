@@ -6,6 +6,7 @@
   import Document from "$lib/components/Document.svelte";
   import Header from "$lib/components/Header.svelte";
   import Markdown from "$lib/components/Markdown.svelte";
+  import Summary from "$lib/components/Summary.svelte";
 
   let { data } = $props();
 
@@ -13,6 +14,7 @@
   let documentMetadata = $state(data.documentMetadata);
   let nextTags = $state("");
   let pdfUrl = $state(null);
+  let summary = data.summary;
 
   const meta = $state({
     authors: data.documentMetadata.authors,
@@ -53,8 +55,12 @@
 <div class="Page">
   <Header />
   <div class="space left">
-    <h1 class="module-title">See your document.</h1>
+    <h1 class="module-title">Explore your document.</h1>
     <Document collapsed={false} id={documentId} meta={documentMetadata} />
+    {#if summary}
+      <Summary {summary} />
+    {/if}
+    <h2 class="module-subhed">Read the full document.</h2>
     {#if documentMetadata.format === "pdf"}
       <embed src={pdfUrl} type="application/pdf" width="100%" height="700px" />
     {:else}

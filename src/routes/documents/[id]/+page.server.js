@@ -6,9 +6,14 @@ const client = new ChromaClient();
 
 export async function load({ params }) {
   const documents = await client.getCollection({ name: "documents" });
+  const summaries = await client.getCollection({ name: "summaries" });
   const documentResponse = await documents.get({
     ids: [params.id],
     include: ["documents", "metadatas"],
+  });
+  const summaryResponse = await summaries.get({
+    include: ["documents"],
+    where: { document_id: params.id },
   });
 
   const document = documentResponse.metadatas[0];
@@ -26,9 +31,10 @@ export async function load({ params }) {
   }
 
   return {
-    contentType: `application/${document.format === 'pdf' ? 'pdf' : 'text'}`,
+    contentType: `application/${document.format === "pdf" ? "pdf" : "text"}`,
     data,
     documentId: params.id,
     documentMetadata: document,
+    summary: summaryResponse?.documents?.[0],
   };
 }

@@ -18,6 +18,7 @@ export async function PUT({ params, request }) {
     nextMeta.dek = dek;
     nextMeta.hed = hed;
     nextMeta.year = year;
+    console.log(nextMeta)
     await documents.update({
       ids: [params.id],
       embeddings: prevRes.embeddings,

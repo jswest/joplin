@@ -82,7 +82,6 @@
   }
   .Document .authors,
   .Document .created-at,
-  .Document .document-id,
   .Document .format,
   .Document .tags {
     font-family: var(--font-sans);
@@ -101,12 +100,5 @@
     font-size: calc(var(--unit) * 0.75);
     font-weight: 400;
     margin-bottom: calc(var(--unit) * 0.25);
-  }
-  .transparent-button {
-    background-color: transparent;
-    border: none;
-    border-radius: 0;
-    cursor: pointer;
-    outline: none;
   }
 </style>

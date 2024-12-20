@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import FastAPI, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from db import get_db
 from .models import QueryRequest
-from processing import process_document
+from processing import hash_text, process_document, summarize_document
 
 app = FastAPI()
 
@@ -30,7 +30,6 @@ ollama = Client(host='http://localhost:11434')
 async def create_document(file: UploadFile):
     file_extension = file.filename.split('.')[-1]
     file_name = f"{str(uuid4())}.{file_extension}"
-    file_path = f"./documents/{file_name}"
     logger.info(f"Processing new document with name '{file_name}'.")
 
     with open(f"./documents/{file_name}", "wb") as out_file:
@@ -41,8 +40,17 @@ async def create_document(file: UploadFile):
         logger.info(f"Chunked and extracted the document.")
         
         client = get_db()
-        document_collection = client.get_or_create_collection("documents")
         chunk_collection = client.get_or_create_collection("chunks")
+        document_collection = client.get_or_create_collection("documents")
+        summaries_collection = client.get_or_create_collection("summaries")
+
+        hash = hash_text(full_text)
+        extant_documents = document_collection.get(
+            where={"hash": hash}
+        )
+        if len(extant_documents.get('documents')) > 0:
+            logger.info("Already ingested this document.")
+            return { "id": extant_documents.ids[0] }
 
         hed_prompt = f"""
         Provide a very short title for this document. It should be no more than 100 characters in length. Only return the title text. Be concise!
@@ -67,24 +75,34 @@ async def create_document(file: UploadFile):
             stream=False
         )
         logger.info(f"Received new dek: '{dek['response']}'")
-
-        # Store the document
+        
         document_id = str(uuid4())
         document_collection.add(
             documents=[full_text],
             metadatas=[{
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
                 "dek": dek["response"],
                 "file_name": file_name,
                 "format": file_extension,
+                "hash": hash,
                 "hed": hed["response"],
                 "is_note": False,
             }],
             ids=[document_id]
         )
-        logger.info(f"Document saved.'")
+        logger.info(f"Document saved.")
+
+        logger.info("Summarizing the document.")
+        summary = summarize_document(full_text)
+        summaries_collection.add(
+            documents=[summary],
+            ids=[f"{document_id}-summary"],
+            metadatas=[{
+                "document_id": document_id
+            }]
+        )
+        logger.info("Summarized the document.")
         
-        # Store the chunks, referencing the document
         chunk_collection.add(
             documents=chunks,
             metadatas=[{
