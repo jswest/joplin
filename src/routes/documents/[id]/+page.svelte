@@ -1,18 +1,25 @@
 <script>
   import { onMount } from "svelte";
+  import { marked } from "marked";
+
   import Button from "$lib/components/Button.svelte";
   import Document from "$lib/components/Document.svelte";
   import Header from "$lib/components/Header.svelte";
-  import { marked } from "marked";
+  import Markdown from "$lib/components/Markdown.svelte";
 
-  export let data;
-
-  const pdfBlob = new Blob([data.pdfData], { type: data.contentType });
+  let { data } = $props();
 
   let documentId = data.documentId;
-  let documentMetadata = data.documentMetadata;
-  let nextTags = "";
-  let pdfUrl;
+  let documentMetadata = $state(data.documentMetadata);
+  let nextTags = $state("");
+  let pdfUrl = $state(null);
+
+  const meta = $state({
+    authors: data.documentMetadata.authors,
+    dek: data.documentMetadata.dek,
+    hed: data.documentMetadata.hed,
+    year: data.documentMetadata.year,
+  });
 
   onMount(() => {
     if (data.contentType === "application/pdf") {
@@ -33,26 +40,56 @@
     documentMetadata = await res.json();
     nextTags = "";
   }
+
+  async function putHandler() {
+    const res = await fetch(`/api/documents/${documentId}`, {
+      method: "PUT",
+      body: JSON.stringify(meta),
+    });
+    documentMetadata = await res.json();
+  }
 </script>
 
 <div class="Page">
   <Header />
   <div class="space left">
     <h1 class="module-title">See your document.</h1>
-    <Document id={documentId} meta={documentMetadata} />
+    <Document collapsed={false} id={documentId} meta={documentMetadata} />
     {#if documentMetadata.format === "pdf"}
       <embed src={pdfUrl} type="application/pdf" width="100%" height="700px" />
     {:else}
-      <div class="markdown">
-        {@html marked(data.data)}
-      </div>
+      <Markdown text={data.data} />
     {/if}
   </div>
   <div class="space right">
+    <h1 class="module-title">Update your document.</h1>
+    <div class="faux-form put-document-form">
+      <div class="field">
+        <h2 class="module-subhed">Update hed.</h2>
+        <input bind:value={meta.hed} type="text" />
+      </div>
+      <div class="field">
+        <h2 class="module-subhed">Update dek.</h2>
+        <input bind:value={meta.dek} type="text" />
+      </div>
+      <div class="field">
+        <h2 class="module-subhed">Update authors (comma delimited).</h2>
+        <input bind:value={meta.authors} type="text" />
+      </div>
+      <div class="field">
+        <h2 class="module-subhed">Update year.</h2>
+        <input bind:value={meta.year} type="text" />
+      </div>
+      <div class="button-wrapper">
+        <Button handler={putHandler} text="Update document." />
+      </div>
+    </div>
     <h1 class="module-title">Annotate your document.</h1>
-    <div class="faux-form">
-      <h2 class="module-subhed">Add a tag to your document.</h2>
-      <input bind:value={nextTags} type="text" />
+    <div class="faux-form add-tags-form">
+      <div class="field">
+        <h2 class="module-subhed">Add a tag to your document.</h2>
+        <input bind:value={nextTags} type="text" />
+      </div>
       <div class="button-wrapper">
         <Button handler={tagHandler} text="Add tag." />
       </div>
@@ -85,28 +122,16 @@
     position: relative;
     width: calc(50vw - (var(--unit) * 1.5));
   }
+  .put-document-form {
+    margin-bottom: calc(var(--unit) * 2);
+  }
+  .field {
+    margin-bottom: var(--unit);
+  }
+  .field h2.module-subhed {
+    margin-bottom: calc(var(--unit) * 0.25);
+  }
   .button-wrapper {
     margin-top: var(--unit);
-  }
-  .markdown {
-    background-color: white;
-    box-sizing: border-box;
-    padding: var(--unit);
-  }
-  .markdown :global(p) {
-    font-family: var(--font-sans);
-    font-size: var(--unit);
-    line-height: 1.5;
-    margin-bottom: calc(var(--unit) * 1.5);
-  }
-  .markdown :global(ul) {
-    font-family: var(--font-sans);
-    font-size: var(--unit);
-    line-height: 1.5;
-    margin-left: var(--unit);
-    padding-left: var(--unit);
-  }
-  .markdown :global(li) {
-    margin-bottom: calc(var(--unit) * 1.5);
   }
 </style>

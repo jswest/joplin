@@ -28,6 +28,7 @@
 	"dependencies": {
 		"chromadb": "^1.9.4",
 		"chromadb-default-embed": "^2.13.2",
+		"lucide-svelte": "^0.469.0",
 		"marked": "^15.0.4",
 		"tree-kill": "^1.2.2"
 	},

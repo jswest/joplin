@@ -1,11 +1,31 @@
+import { ChromaClient } from "chromadb";
 import { json } from "@sveltejs/kit";
 
-import { FASTAPI_PORT } from "$lib/config.js";
+import { getArrayField } from "$lib/utils.js";
 
-export async function GET({ params }) {
-  const response = await fetch(
-    `http://localhost:${FASTAPI_PORT}/documents/${params.id}}`
-  );
-  const documents = await response.json();
-  return json(documents);
+const client = new ChromaClient();
+
+export async function PUT({ params, request }) {
+  const { authors, dek, hed, year } = await request.json();
+  try {
+    const documents = await client.getCollection({ name: "documents" });
+    const prevRes = await documents.get({
+      ids: [params.id],
+      include: ["embeddings", "metadatas"],
+    });
+    const nextMeta = { ...prevRes.metadatas[0] };
+    nextMeta.authors = getArrayField(authors).join(",");
+    nextMeta.dek = dek;
+    nextMeta.hed = hed;
+    nextMeta.year = year;
+    await documents.update({
+      ids: [params.id],
+      embeddings: prevRes.embeddings,
+      metadatas: [nextMeta],
+    });
+    return json(nextMeta);
+  } catch (error) {
+    console.error(error);
+    return json({ error: error.message });
+  }
 }

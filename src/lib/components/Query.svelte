@@ -3,6 +3,7 @@
 
   import Button from "$lib/components/Button.svelte";
   import Document from "$lib/components/Document.svelte";
+  import Markdown from "$lib/components/Markdown.svelte";
 
   let answer = $state("");
   let documents = $state([]);
@@ -53,7 +54,7 @@
     <div class="answer">
       <h2 class="module-subhed">The AI answer.</h2>
       <div class="answer-guts">
-        {@html answer}
+        <Markdown text={answer} />
       </div>
       <h2 class="module-subhed">The AI sources.</h2>
       <ul class="answer-sources">
@@ -112,12 +113,6 @@
     background-color: white;
     margin-bottom: var(--unit);
     margin-top: var(--unit);
-  }
-  .answer-guts :global(p) {
-    font-family: var(--font-sans);
-    font-size: var(--unit);
-    line-height: 1.5;
-    padding: var(--unit);
   }
   .answer ul {
     list-style: none;
